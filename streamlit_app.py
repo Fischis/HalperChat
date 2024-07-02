@@ -1,5 +1,5 @@
 import streamlit as st
-rom langchain_openai import OpenAI
+from langchain_openai import OpenAI
 
 st.title('🦜🔗 Hilfe Hilfe Hilfe')
 
