@@ -14,36 +14,17 @@ from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain import VectorDBQA, VectorDBQAWithSourcesChain
 
+#
+#
+#
 st.title('🦜🔗 Hilfe Hilfe')
+
 openai_api_key = st.sidebar.text_input('OpenAI API Key', type='password')
-#
-#
-#
+if 'vStore' not in st.session_state:
+    st.session_state.vStore = None
 
 
 #llm = OpenAI(temperature=0, openai_api_key=OPENAI_API_KEY, model_name='gpt-3.5-turbo-instruct')
-llm = OpenAI(model='gpt-3.5-turbo-instruct', temperature=0, openai_api_key=openai_api_key)
-
-template = """Du bist ein Support-Chatbot. Deine Aufgabe ist es, den Benutzern bei ihren Anliegen zu helfen. Antworte höflich und informativ auf die folgenden Nachrichten.
-    Chatverlauf: {history}
-    Benutzer: {input}
-    Support-Chatbot:"""
-
-PROMPT = PromptTemplate(input_variables=["history","input"], template=template)
-myMemory=ConversationBufferMemory()
-cChain = ConversationChain(llm=llm, memory=myMemory, prompt = PROMPT)
-
-def callLLM(chain, query):
-    with get_openai_callback() as cb:
-        result = chain.run(query)
-        #print(f'Spent a total of {cb.total_tokens} tokens')
-
-    return result
-
-
-def generate_response(input_text):
-    llm = OpenAI(temperature=0.7, openai_api_key=openai_api_key)
-    st.info(llm(input_text))
 
 #
 # 
@@ -78,16 +59,48 @@ def ScrapePagesToVectorDB():
     store.save_local("faiss_store1")    
 
 def ReadVectorDB ():
-    #metadatas = []
-    docs, metadatas = [], []
-    store = FAISS.from_texts(docs, OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=openai_api_key))
-    store.load_local("faiss_store1", OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=openai_api_key), allow_dangerous_deserialization=True)
-    return store
+    tmpStore = FAISS.load_local("faiss_store1", OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=openai_api_key), allow_dangerous_deserialization=True)
+    st.sidebar.info (tmpStore.index.ntotal)
+    return tmpStore
+    #all_docs = tmpStore.index_to
+    # _docs.values()
+    #all_metadatas = tmpStore.index_to_metadatas.values()
 
+    # Print all documents and their corresponding metadata
+    #for doc, metadata in zip(all_docs, all_metadatas):
+    #    print(f"Document: {doc}, Metadata: {metadata}")
+       
+#
+#
+#
+
+
+def GenerateResponse (userInput):
+    template = """Du bist ein Support-Chatbot. Deine Aufgabe ist es, den Benutzern bei ihren Anliegen zu helfen. Antworte höflich und informativ auf die folgenden Nachrichten.
+        Chatverlauf: {history}
+        Benutzer: {input}
+        Support-Chatbot:"""
+  
+    llm = OpenAI(model='gpt-3.5-turbo-instruct', temperature=0, openai_api_key=openai_api_key)
+    PROMPT = PromptTemplate(input_variables=["history","input"], template=template)
+    myMemory=ConversationBufferMemory()
+    #cChain = ConversationChain(llm=llm, memory=myMemory, prompt = PROMPT)
     
-store = ReadVectorDB()
-cChain = VectorDBQAWithSourcesChain.from_llm(llm=llm, vectorstore=store)
+    cChain = VectorDBQAWithSourcesChain.from_llm(llm=llm, vectorstore=st.session_state.vStore)   
+    result = cChain({"question": userInput})
+    print(f"Answer: {result['answer']}")
+    print(f"Sources: {result['sources']}")
+    st.info(result)
 
+#
+#
+#
+if (st.sidebar.button('Generate Vector DB')):
+    ScrapePagesToVectorDB()
+
+if (st.sidebar.button('Load Vector DB')):
+    st.session_state.vStore = ReadVectorDB()
+    st.sidebar.info (st.session_state.vStore.index.ntotal)
 
 #
 #
@@ -98,7 +111,7 @@ with st.form('my_form'):
     if not openai_api_key.startswith('sk-'):
         st.warning('Please enter your OpenAI API key!', icon='⚠')
     if submitted and openai_api_key.startswith('sk-'):
-        generate_response(text)
+        GenerateResponse(text)
 
 
 
