@@ -14,14 +14,19 @@ from langchain.vectorstores import FAISS
 from langchain_community.embeddings.openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain import VectorDBQA, VectorDBQAWithSourcesChain
+from langchain.chains import RetrievalQA
 
 #
 #
 #
 st.title('🦜🔗 Hilfe Hilfe')
 
-#openai_api_key = st.sidebar.text_input('OpenAI API Key', type='password')
-openai_api_key = st.secrets["openai_api_key"]
+
+try:
+    openai_api_key = st.secrets["openai_api_key"]
+except:
+    openai_api_key = st.sidebar.text_input('OpenAI API Key', type='password')
+
 if 'vStore' not in st.session_state:
     st.session_state.vStore = None
 
@@ -104,29 +109,39 @@ def ReadVectorDB ():
 
 
 def GenerateResponse (userInput):
-    template = """Du bist ein Support-Chatbot. Deine Aufgabe ist es, den Benutzern bei ihren Anliegen zu helfen. Antworte höflich und informativ auf die folgenden Nachrichten.
-        Chatverlauf: {history}
-        Benutzer: {input}
-        Support-Chatbot:"""
+    template = "Du bist ein Support-Chatbot der Firma web.de. Deine Aufgabe ist es, den Benutzern bei ihren Anliegen zu helfen. Antworte höflich und informativ auf die folgenden Fragen in deutsch:"
   
-    llm = OpenAI(model='gpt-3.5-turbo-instruct', temperature=0, openai_api_key=openai_api_key)
-    PROMPT = PromptTemplate(input_variables=["history","input"], template=template)
-    myMemory=ConversationBufferMemory()
-    #cChain = ConversationChain(llm=llm, memory=myMemory, prompt = PROMPT)
-    
+    #llm = OpenAI(model='gpt-3.5-turbo-instruct', temperature=0, openai_api_key=openai_api_key)
+    #myMemory=ConversationBufferMemory()
     cChain = VectorDBQAWithSourcesChain.from_llm(llm=llm, vectorstore=st.session_state.vStore)   
+    #result = qa({"query": userInput, "prompt": template})
     result = cChain({"question": userInput})
-    #print(f"Answer: {result['answer']}")
-    #print(f"Sources: {result['sources']}")
     st.info(f"Frage: {userInput}")
     st.info(f"Antwort: {result['answer']}")
     st.info(f"Links: {result['sources']}")
 
+def GenerateResponse2 (userInput):
+    template = "Du bist ein Support-Chatbot der Firma web.de. Deine Aufgabe ist es, den Benutzern bei ihren Anliegen zu helfen. Antworte höflich und informativ auf die folgenden Fragen in deutsch:"    
+    llm = OpenAI(temperature=0.1, max_tokens=256, openai_api_key=openai_api_key)
+
+    qa_chain = RetrievalQA.from_llm(llm=llm, retriever=st.session_state.vStore.as_retriever(), return_source_documents=True)
+
+    # Query the QA chain with user input
+    result = qa_chain({"query": userInput, "prompt": template})
+
+    print(result)
+    st.info(f"Frage: {userInput}")
+    st.info(f"Antwort: {result['result']}")
+    source_documents = result.get('source_documents', [])
+    links = [doc.metadata.get('source') for doc in source_documents if 'source' in doc.metadata]
+    st.info(f"Links: {links}")
+
+
 #
 #
 #
-if (st.sidebar.button('Generate Vector DB')):
-    ScrapePagesToVectorDB()
+#if (st.sidebar.button('Generate Vector DB')):
+#    ScrapePagesToVectorDB()
 
 if (st.sidebar.button('Load Vector DB')):
     st.session_state.vStore = ReadVectorDB()
@@ -157,7 +172,7 @@ with st.form('my_form'):
     if st.session_state.vStore == None:
         st.warning('Please Load Vector DB!', icon='⚠')
     if submitted and openai_api_key.startswith('sk-'):
-        GenerateResponse(st.session_state.user_input)
+        GenerateResponse2(st.session_state.user_input)
 
 
 
