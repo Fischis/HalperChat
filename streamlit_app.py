@@ -8,6 +8,7 @@ from langchain.callbacks import get_openai_callback
 from langchain.text_splitter import CharacterTextSplitter
 from bs4 import BeautifulSoup
 import requests
+import json
 
 from langchain.vectorstores import FAISS
 from langchain_community.embeddings.openai import OpenAIEmbeddings
@@ -30,10 +31,6 @@ if 'vStore' not in st.session_state:
 # 
 #
 
-qaUrls = ['https://hilfe.web.de/account/login/kann-mich-nicht-einloggen-login-bekannt.html',
-           'https://hilfe.web.de/account/login/kann-mich-nicht-einloggen.html',
-           'https://hilfe.web.de/account/login/kein-mobiler-login.html']
-
 def extract_text_from(url):
     html = requests.get(url).text
     soup = BeautifulSoup(html, features="html.parser")
@@ -44,9 +41,16 @@ def extract_text_from(url):
 
 def ScrapePagesToVectorDB():
     qaPages = []
+    qaUrls = []
+    with open('URLS', 'r') as file:
+        for line in file:
+                url = line.strip().strip(',').strip('"')
+                if url:  
+                    qaUrls.append(url)
+
     for url in qaUrls:
         qaPages.append({'text': extract_text_from(url), 'source': url})
-    #
+
     text_splitter = CharacterTextSplitter(chunk_size=1500, separator="\n")
     docs, metadatas = [], []
     for page in qaPages:
