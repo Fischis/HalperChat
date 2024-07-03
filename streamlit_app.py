@@ -120,8 +120,8 @@ def GenerateResponse (userInput):
 #
 #
 #
-if (st.sidebar.button('Generate Vector DB')):
-    ScrapePagesToVectorDB()
+#if (st.sidebar.button('Generate Vector DB')):
+#    ScrapePagesToVectorDB()
 
 if (st.sidebar.button('Load Vector DB')):
     st.session_state.vStore = ReadVectorDB()
@@ -135,6 +135,8 @@ with st.form('my_form'):
     submitted = st.form_submit_button('Go')
     if not openai_api_key.startswith('sk-'):
         st.warning('Please enter your OpenAI API key!', icon='⚠')
+    if st.session_state.vStore == None:
+        st.warning('Please Load Vector DB!', icon='⚠')
     if submitted and openai_api_key.startswith('sk-'):
         GenerateResponse(text)
 
