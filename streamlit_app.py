@@ -114,6 +114,7 @@ def GenerateResponse (userInput):
     result = cChain({"question": userInput})
     #print(f"Answer: {result['answer']}")
     #print(f"Sources: {result['sources']}")
+    st.info(f"Frage: {userInput}")
     st.info(f"Antwort: {result['answer']}")
     st.info(f"Links: {result['sources']}")
 
@@ -130,15 +131,33 @@ if (st.sidebar.button('Load Vector DB')):
 #
 #
 #
+
+if 'user_input' not in st.session_state:
+    st.session_state.user_input = ''
+
+def submit():
+    st.session_state.user_input = st.session_state.txt_widget
+    st.session_state.txt_widget = ''
+
+#st.text_input('Something', key='widget', on_change=submit)
+
+#st.write(f'Last submission: {st.session_state.something}')
 with st.form('my_form'):
-    text = st.text_area('Wie kann ich Ihnen helfen?', '')
-    submitted = st.form_submit_button('Go')
+    text = st.text_area('Wie kann ich Ihnen helfen?', '', key="txt_widget")
+    submitted = st.form_submit_button('Go',  on_click=submit)
+
+
+    #st.write(my_text)
     if not openai_api_key.startswith('sk-'):
         st.warning('Please enter your OpenAI API key!', icon='⚠')
     if st.session_state.vStore == None:
         st.warning('Please Load Vector DB!', icon='⚠')
     if submitted and openai_api_key.startswith('sk-'):
-        GenerateResponse(text)
+        GenerateResponse(st.session_state.user_input)
+
+
+
+
 
 
 
