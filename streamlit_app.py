@@ -31,6 +31,29 @@ if 'vStore' not in st.session_state:
 # 
 #
 
+def FetchLinks(url):
+    try:
+        # Anfrage an die URL senden
+        response = requests.get(url)
+        response.raise_for_status()  # Stellt sicher, dass keine HTTP-Fehler auftreten
+
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # Alle Links extrahieren
+        urls = []
+        links = [a['href'] for a in soup.find_all('a', href=True) if a['href'].startswith('')]
+        for link in links:
+            if  link.startswith("https://"):
+                urls.append(f"{link}")
+            else:
+                urls.append(f"{url}{link}")
+        return urls
+
+    except requests.RequestException as e:
+        print(f"Fehler beim Abrufen der Webseite: {e}")
+
+
+
 def extract_text_from(url):
     html = requests.get(url).text
     soup = BeautifulSoup(html, features="html.parser")
@@ -41,12 +64,7 @@ def extract_text_from(url):
 
 def ScrapePagesToVectorDB():
     qaPages = []
-    qaUrls = []
-    with open('URLS', 'r') as file:
-        for line in file:
-                url = line.strip().strip(',').strip('"')
-                if url:  
-                    qaUrls.append(url)
+    qaUrls = FetchLinks('https://hilfe.web.de/')
 
     for url in qaUrls:
         qaPages.append({'text': extract_text_from(url), 'source': url})
@@ -60,7 +78,8 @@ def ScrapePagesToVectorDB():
         print(f"Split {page['source']} into {len(splits)} chunks")
     #
     store = FAISS.from_texts(docs, OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=openai_api_key), metadatas=metadatas)
-    store.save_local("faiss_store1")    
+    store.save_local("faiss_store1") 
+    print ("Store Saved")   
 
 def ReadVectorDB ():
     tmpStore = FAISS.load_local("faiss_store1", OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=openai_api_key), allow_dangerous_deserialization=True)
@@ -92,9 +111,10 @@ def GenerateResponse (userInput):
     
     cChain = VectorDBQAWithSourcesChain.from_llm(llm=llm, vectorstore=st.session_state.vStore)   
     result = cChain({"question": userInput})
-    print(f"Answer: {result['answer']}")
-    print(f"Sources: {result['sources']}")
-    st.info(result)
+    #print(f"Answer: {result['answer']}")
+    #print(f"Sources: {result['sources']}")
+    st.info(f"Antwort: {result['answer']}")
+    st.info(f"Links: {result['sources']}")
 
 #
 #
