@@ -70,6 +70,10 @@ def ScrapePagesToVectorDB():
     for url in qaUrls:
         qaPages.append({'text': extract_text_from(url), 'source': url})
 
+    for url in qaUrls:
+        qaPages.append({'text': extract_text_from(url), 'source': url})
+
+
     text_splitter = CharacterTextSplitter(chunk_size=1500, separator="\n")
     docs, metadatas = [], []
     for page in qaPages:
@@ -121,8 +125,8 @@ def GenerateResponse (userInput):
 #
 #
 #
-#if (st.sidebar.button('Generate Vector DB')):
-#    ScrapePagesToVectorDB()
+if (st.sidebar.button('Generate Vector DB')):
+    ScrapePagesToVectorDB()
 
 if (st.sidebar.button('Load Vector DB')):
     st.session_state.vStore = ReadVectorDB()
