@@ -21,7 +21,7 @@ from langchain import VectorDBQA, VectorDBQAWithSourcesChain
 st.title('🦜🔗 Hilfe Hilfe')
 
 #openai_api_key = st.sidebar.text_input('OpenAI API Key', type='password')
-openai_api_key = st.secrets(["openai_api_key"])
+openai_api_key = st.secrets["openai_api_key"]
 if 'vStore' not in st.session_state:
     st.session_state.vStore = None
 
