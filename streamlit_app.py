@@ -102,22 +102,22 @@ def ReadVectorDB ():
     # Print all documents and their corresponding metadata
     #for doc, metadata in zip(all_docs, all_metadatas):
     #    print(f"Document: {doc}, Metadata: {metadata}")
-       
+        
 #
-#
+#  
 #
 
 
 def GenerateResponse (userInput):
     template = "Du bist ein Support-Chatbot der Firma web.de. Deine Aufgabe ist es, den Benutzern bei ihren Anliegen zu helfen. Antworte höflich und informativ auf die folgenden Fragen in deutsch:"
   
-    #llm = OpenAI(model='gpt-3.5-turbo-instruct', temperature=0, openai_api_key=openai_api_key)
+    llm = OpenAI(model='gpt-3.5-turbo-instruct', temperature=0, openai_api_key=openai_api_key)
     #myMemory=ConversationBufferMemory()
     cChain = VectorDBQAWithSourcesChain.from_llm(llm=llm, vectorstore=st.session_state.vStore)   
     #result = qa({"query": userInput, "prompt": template})
     result = cChain({"question": userInput})
-    st.info(f"Frage: {userInput}")
-    st.info(f"Antwort: {result['answer']}")
+    st.info(f"Frage: {userInput}") 
+    st.info(f"Antwort: {result['answer']}") 
     st.info(f"Links: {result['sources']}")
 
 def GenerateResponse2 (userInput):
