@@ -91,8 +91,8 @@ def ScrapePagesToVectorDB():
     store.save_local("faiss_store1") 
     print ("Store Saved")   
 
-def ReadVectorDB ():
-    tmpStore = FAISS.load_local("faiss_store1", OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=openai_api_key), allow_dangerous_deserialization=True)
+def ReadVectorDB (storeName):
+    tmpStore = FAISS.load_local(storeName, OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=openai_api_key), allow_dangerous_deserialization=True)
     st.sidebar.info (tmpStore.index.ntotal)
     return tmpStore
     #all_docs = tmpStore.index_to
@@ -143,8 +143,12 @@ def GenerateResponse2 (userInput):
 #if (st.sidebar.button('Generate Vector DB')):
 #    ScrapePagesToVectorDB()
 
-if (st.sidebar.button('Load Vector DB')):
-    st.session_state.vStore = ReadVectorDB()
+if (st.sidebar.button('Load Vector DB S')):
+    st.session_state.vStore = ReadVectorDB("faiss_store1")
+    st.sidebar.info (st.session_state.vStore.index.ntotal)
+
+if (st.sidebar.button('Load Vector DB M')):
+    st.session_state.vStore = ReadVectorDB("faiss_store4")
     st.sidebar.info (st.session_state.vStore.index.ntotal)
 
 #
